@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hackathon AI Search System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            min-height: 100vh;
+            color: #f8fafc;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .search-input:focus {
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
+        }
+
+        .project-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .project-card:hover {
+            transform: translateY(-2px);
+            background: rgba(51, 65, 85, 0.8);
+        }
+
+        /* Custom File Input Styling */
+        input[type="file"]::file-selector-button {
+            background: #3b82f6;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            margin-right: 1rem;
+            transition: background 0.2s;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background: #2563eb;
+        }
+
+        .status-pill {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <!-- Header Section -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4 gradient-text">
+                Hackathon AI Search System
+            </h1>
+            <p class="text-slate-400 text-lg">
+                Upload project PDFs and leverage AI to search through technical ideas intelligently.
+            </p>
+        </header>
+
+        <div class="grid gap-8">
+            <!-- Upload Section -->
+            <section class="glass-panel rounded-2xl p-6 md:p-8">
+                <div class="flex items-center mb-6">
+                    <div class="bg-blue-500/20 p-3 rounded-lg mr-4">
+                        <i class="fas fa-cloud-upload-alt text-blue-400 text-xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold">Upload New Project</h2>
+                </div>
+                
+                <form id="uploadForm" class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-grow">
+                        <input type="file" id="fileInput" accept=".pdf" 
+                               class="block w-full text-sm text-slate-400 glass-panel border-none rounded-xl p-3 focus:outline-none cursor-pointer">
+                    </div>
+                    <button type="submit" 
+                            class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-8 rounded-xl transition-all flex items-center justify-center gap-2">
+                        <i class="fas fa-upload"></i>
+                        <span>Upload</span>
+                    </button>
+                </form>
+                <div id="uploadStatus" class="mt-4 text-sm hidden"></div>
+            </section>
+            
+            <!-- Search Section -->
+            <section class="glass-panel rounded-2xl p-6 md:p-8">
+                <div class="flex items-center mb-6">
+                    <div class="bg-purple-500/20 p-3 rounded-lg mr-4">
+                        <i class="fas fa-search text-purple-400 text-xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold">Search Projects</h2>
+                </div>
+                
+                <div class="relative group">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                    <input type="text" id="searchInput" 
+                           placeholder="Enter student name or project idea..." 
+                           class="w-full bg-slate-900/50 border border-slate-700 text-white rounded-xl py-4 pl-12 pr-32 focus:outline-none focus:border-blue-500 transition-all search-input">
+                    <button id="searchBtn" 
+                            class="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-medium transition-all">
+                        Search
+                    </button>
+                </div>
+            </section>
+            
+             <!-- Search Result Section -->
+<section class="glass-panel rounded-2xl p-6 md:p-8">
+    <div class="flex items-center mb-6">
+        <div class="bg-green-500/20 p-3 rounded-lg mr-4">
+            <i class="fas fa-robot text-green-400 text-xl"></i>
+        </div>
+        <h2 class="text-2xl font-bold">Search Result</h2>
+    </div>
+
+    <div id="searchResult">
+        <p class="text-slate-500">Search results will appear here.</p>
+    </div>
+</section>
+
+<!-- PDF Preview Modal -->
+<div id="pdfModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
+    <div class="bg-slate-900 w-11/12 h-5/6 rounded-xl relative">
+        <button onclick="closePreview()" 
+            class="absolute top-3 right-3 text-white text-xl">✖</button>
+        <iframe id="pdfFrame" class="w-full h-full rounded-xl"></iframe>
+    </div>
+</div>
+
+            <!-- Projects List Section -->
+            <section class="glass-panel rounded-2xl p-6 md:p-8">
+                <div class="flex items-center justify-between mb-8">
+                    <div class="flex items-center">
+                        <div class="bg-amber-500/20 p-3 rounded-lg mr-4">
+                            <i class="fas fa-folder-open text-amber-400 text-xl"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold">Uploaded Projects</h2>
+                    </div>
+                    <span id="projectCount" class="bg-slate-800 text-slate-400 px-3 py-1 rounded-full text-sm font-mono">
+                        0 Files
+                    </span>
+                </div>
+
+                <div id="projectList" class="space-y-4">
+                    <!-- Dynamic Content Loaded Here -->
+                    <div id="emptyState" class="text-center py-12">
+                        <i class="fas fa-file-pdf text-slate-700 text-5xl mb-4"></i>
+                        <p class="text-slate-500">No projects uploaded yet.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Notification Overlay (Custom replacement for alert) -->
+    <div id="toast" class="fixed bottom-8 right-8 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-slate-800 border border-slate-700 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3">
+            <i id="toastIcon" class="fas fa-check-circle"></i>
+            <span id="toastMessage">Action completed</span>
+        </div>
+    </div>
+
+    <script>
+const projectList = document.getElementById('projectList');
+const uploadForm = document.getElementById('uploadForm');
+const fileInput = document.getElementById('fileInput');
+const searchInput = document.getElementById('searchInput');
+const projectCountLabel = document.getElementById('projectCount');
+
+function showToast(message, type = 'success') {
+    alert(message); // you can keep your toast UI if you want
+}
+
+async function loadFiles() {
+    const res = await fetch("/files");
+    const data = await res.json();
+    renderProjects(data.files);
+}
+
+function renderProjects(files) {
+    if (!files || files.length === 0) {
+        projectList.innerHTML = `
+            <div class="text-center py-12">
+                <p class="text-slate-500">No projects uploaded yet.</p>
+            </div>`;
+        projectCountLabel.innerText = "0 Files";
+        return;
+    }
+
+    projectList.innerHTML = files.map(name => `
+    <div class="project-card flex items-center justify-between p-4 rounded-xl bg-slate-800/40 border border-slate-700/50">
+        <div class="flex items-center gap-4 overflow-hidden">
+            <div class="bg-red-500/10 p-3 rounded-lg text-red-400">
+                <i class="fas fa-file-pdf"></i>
+            </div>
+            <h3 class="font-medium text-slate-200 truncate pr-4">${name}</h3>
+        </div>
+
+        <!-- BUTTON SECTION -->
+        <div class="flex items-center gap-3">
+            <button onclick="previewFile('${encodeURIComponent(name)}')"
+                class="bg-blue-500/20 hover:bg-blue-500 text-blue-400 hover:text-white px-4 py-2 rounded-lg transition-all text-sm font-medium">
+                Preview
+            </button>
+
+            <button onclick="deleteProject('${name}')"
+                class="bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white px-4 py-2 rounded-lg transition-all text-sm font-medium">
+                Delete
+            </button>
+        </div>
+    </div>
+`).join('');
+
+
+    projectCountLabel.innerText = `${files.length} File${files.length !== 1 ? 's' : ''}`;
+}
+
+async function deleteProject(filename) {
+    await fetch(`/delete/${filename}`, { method: "DELETE" });
+    showToast("File deleted");
+    loadFiles();
+}
+
+uploadForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const file = fileInput.files[0];
+    if (!file) {
+        showToast("Select a file first", "error");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch("/upload", {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await res.json();
+    showToast(data.message || data.error);
+    fileInput.value = "";
+    loadFiles();
+});
+
+document.getElementById("searchBtn").addEventListener("click", async () => {
+    const query = searchInput.value;
+    if (!query) return;
+
+    const res = await fetch("/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query })
+    });
+
+    const data = await res.json();
+
+    const searchResult = document.getElementById("searchResult");
+
+    // 🔥 Clear old result
+    searchResult.innerHTML = "";
+
+    if (data.student_name === "No Match Found") {
+        searchResult.innerHTML = `
+            <div class="p-6 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400">
+                <h3 class="font-bold mb-2">No Match Found</h3>
+                <p>No related project found for your search query.</p>
+            </div>
+        `;
+    } else {
+        searchResult.innerHTML = `
+            <div class="project-card p-6 rounded-xl bg-slate-800/50 border border-slate-700">
+                <h3 class="text-lg font-bold mb-3">${data.student_name}</h3>
+                <pre class="whitespace-pre-wrap text-slate-300 text-sm">${data.description}</pre>
+            </div>
+        `;
+    }
+});
+
+
+
+window.onload = loadFiles;
+
+function previewFile(filename) {
+    const modal = document.getElementById("pdfModal");
+    const frame = document.getElementById("pdfFrame");
+
+    frame.src = `/preview/${encodeURIComponent(filename)}`;
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+}
+
+
+function closePreview() {
+    const modal = document.getElementById("pdfModal");
+    const frame = document.getElementById("pdfFrame");
+
+    frame.src = "";
+    modal.classList.add("hidden");
+}
+
+</script>
+
+</body>
+</html>
